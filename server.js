@@ -281,15 +281,20 @@ async function handleBookmarksServiceRequest(req, res) {
 }
 
 async function handleRequest(req, res) {
-    switch (req.type) {
-        case 'contacts':
-            return await handleContactsServiceRequest(req, res);
-        case 'bookmarks':
-            return await handleBookmarksServiceRequest(req, res);
-        default:
+    if (! await handleContactsServiceRequest(req, res))
+        if (! await handleBookmarksServiceRequest(req, res))
             return false;
-    }
+    return true;
 }
+    const server = createServer(async (req, res) => {
+    console.log(req.method, req.url);
+    accessControlConfig(req, res);
+    if (!CORS_Preflight(req, res))
+        if (!await handleRequest(req, res)) {
+            res.writeHead(404);
+            res.end();
+        }
+});
 
 
 function getPayload(req) {
@@ -306,15 +311,6 @@ function getPayload(req) {
     })
 }
 
-const server = createServer(async (req, res) => {
-    console.log(req.method, req.url);
-    accessControlConfig(req, res);
-    if (!CORS_Preflight(req, res))
-        if (!await handleRequest(req, res)) {
-            res.writeHead(404);
-            res.end();
-        }
-});
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
